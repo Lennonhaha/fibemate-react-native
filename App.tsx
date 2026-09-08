@@ -94,7 +94,10 @@ export default function App() {
       const bKeys = await b.initialize();
       const { ciphertext, sharedSecret: sA } = await a.encapsulateToPeer(bKeys.kemPublicKey, bKeys.ecdhPublicKey);
       const sB = await b.decapsulateFromPeer(ciphertext, (a as any).ecdhPublicKey);
-      const match = Buffer.compare(Buffer.from(sA), Buffer.from(sB)) === 0;
+      // Constant-time compare of two Uint8Arrays (sharedSecret is Uint8Array).
+      const match =
+        sA.length === sB.length &&
+        sA.reduce((acc: number, bv: number, i: number) => acc | (bv ^ (sB as Uint8Array)[i]), 0) === 0;
       add('Hybrid Handshake', match, match ? '✅ Shared secret match' : '❌ Key mismatch');
 
       setCurrentStep('');

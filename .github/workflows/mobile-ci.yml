@@ -27,31 +27,18 @@ jobs:
         run: npm ci
 
       - name: Lint (eslint, advisory - non-blocking)
-        # NOTE: .eslintrc.js extends @react-native/eslint-config which requires
-        # eslint-plugin-react, but that plugin is currently MISSING from
-        # devDependencies (npm ci cannot install it). This step is non-blocking
-        # so the pipeline still gates type-check + tests while we flag the gap.
-        # TODO(follow-up): add `eslint-plugin-react` to devDependencies, then
-        # drop `continue-on-error` to make lint a hard gate.
-        continue-on-error: true
+        # Lint is a HARD gate. .eslintrc.js extends @react-native/eslint-config
+        # which requires eslint-plugin-react; that plugin is now in devDependencies
+        # (pinned to RN 0.86). npm ci installs it, so lint must pass.
         run: npm run lint
 
-      - name: Type-check (tsc --noEmit, advisory - non-blocking)
-        # NOTE: App.tsx(97) uses the Node global `Buffer`, but @types/node is
-        # absent and RN has no Buffer runtime shim. `tsc --noEmit` fails on a
-        # clean machine (caught by this CI run). Made advisory so the pipeline
-        # still runs + reports; re-enable as a hard gate after the Buffer usage
-        # is fixed (add @types/node for the type, and a runtime Buffer polyfill
-        # or switch to Uint8Array for production RN).
-        continue-on-error: true
+      - name: Type-check (tsc --noEmit, HARD gate)
+        # App.tsx now compares the hybrid shared secret with a constant-time
+        # Uint8Array compare (no Node `Buffer`, no @types/node needed), so tsc
+        # passes on a clean machine. Lint + type-check + test are all hard gates.
         run: npx tsc --noEmit
 
-      - name: Unit tests (jest, advisory - non-blocking)
-        # NOTE: jest.config.js sets `preset: '@react-native/jest-preset'`, but
-        # that package is absent from devDependencies, so the existing
-        # __tests__/App.test.tsx cannot run on a clean machine (caught by this
-        # CI run). Made advisory so the pipeline stays green + reports; add
-        # `@react-native/jest-preset` (matching RN 0.86) to devDependencies, then
-        # drop `continue-on-error` to make tests a hard gate.
-        continue-on-error: true
+      - name: Unit tests (jest, HARD gate)
+        # jest.config.js sets preset '@react-native/jest-preset', now present in
+        # devDependencies (RN 0.86). __tests__/App.test.tsx runs in CI.
         run: npm test -- --passWithNoTests
