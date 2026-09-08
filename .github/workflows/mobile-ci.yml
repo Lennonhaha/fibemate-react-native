@@ -1,0 +1,36 @@
+name: Mobile CI (fibemate-react-native / RN CLI)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-type-test:
+    name: Lint + Type-check + Test (RN CLI)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (eslint)
+        run: npm run lint
+
+      - name: Type-check (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      - name: Unit tests (jest)
+        run: npm test -- --passWithNoTests
