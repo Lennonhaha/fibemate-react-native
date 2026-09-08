@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # fast-xml-parser is a transitive build-time dependency (pulled by
+    # @react-native-community/cli-config-android / cli-platform-apple, ^4.4.1).
+    # The 4.x line has no security patch; the only fixed releases are 5.x
+    # (semver-major). Dependabot cannot auto-bump across majors, so it loops
+    # on failure. Ignore the major bump to keep CI green; revisit if RN CLI
+    # toolchain adopts fast-xml-parser 5.x.
+    ignore:
+      - dependency-name: "fast-xml-parser"
+        update-types: ["version-update:semver-major"]
