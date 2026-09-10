@@ -13,3 +13,17 @@ updates:
     ignore:
       - dependency-name: "fast-xml-parser"
         update-types: ["version-update:semver-major"]
+      # eslint 10 与 @react-native/eslint-config@0.86.0 的 peer 范围 ^8||^9 冲突，
+      # 安装阶段直接 ERESOLVE 失败（CI 红）。等 RN 工具链放开 peer 范围后再解锁。
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      # React Native 0.86 依赖 Babel 7；@babel/runtime 8 是跨大版本，
+      # 单独升会破坏 metro / Hermes 的转译链路，应与 RN 整体升级一起做。
+      - dependency-name: "@babel/runtime"
+        update-types: ["version-update:semver-major"]
+      # 这两个包随 React Native 核心版本走（0.86.x）。在 react-native 本体仍是
+      # 0.86 时单独升到 0.87，会出现模板 / 构建配置与新版本不匹配。
+      - dependency-name: "@react-native/new-app-screen"
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: "@react-native/metro-config"
+        update-types: ["version-update:semver-minor"]
