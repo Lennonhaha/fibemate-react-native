@@ -1,0 +1,62 @@
+name: version-family-consistency
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - '.github/workflows/version-family.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check @react-native/* and Babel version family alignment
+        run: |
+          node -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json","utf8"));
+            const deps = {...pkg.dependencies, ...pkg.devDependencies};
+
+            // 白名单解析：只接受 ^X.Y / ~X.Y / X.Y / >=X.Y 等标准 semver 前缀；
+            // workspace:*、*、git/file 协议一律返回 null（跳过，不报错）。
+            function parseVersion(v) {
+              const cleaned = String(v).replace(/^[^\d]*/, "");
+              const m = cleaned.match(/^(\d+)\.(\d+)/);
+              if (!m) return null;
+              return { major: +m[1], minor: +m[2] };
+            }
+
+            const rn = deps["react-native"];
+            if (!rn) { console.error("react-native not found in package.json"); process.exit(1); }
+            const rnV = parseVersion(rn);
+            if (!rnV) { console.error("react-native version not parseable: " + rn); process.exit(1); }
+            const rnMM = rnV.major + "." + rnV.minor;
+
+            let bad = [];
+
+            // 1. @react-native/* 族（显式排除 @react-native-community/*）
+            for (const [k, v] of Object.entries(deps)) {
+              if (!k.startsWith("@react-native/")) continue;
+              if (k.startsWith("@react-native-community/")) continue;
+              const vV = parseVersion(v);
+              if (!vV) { console.log("skip (non-standard): " + k + "@" + v); continue; }
+              const vMM = vV.major + "." + vV.minor;
+              if (vMM !== rnMM) bad.push(k + "@" + v + " (" + vMM + ") != react-native@" + rn + " (" + rnMM + ")");
+            }
+
+            // 2. Babel major 对齐（core 与 preset-env 必须同一 major）
+            const core = deps["@babel/core"];
+            const preset = deps["@babel/preset-env"];
+            if (core && preset) {
+              const cV = parseVersion(core), pV = parseVersion(preset);
+              if (cV && pV && cV.major !== pV.major) {
+                bad.push("@babel/core@" + core + " (major " + cV.major + ") != @babel/preset-env@" + preset + " (major " + pV.major + ")");
+              }
+            }
+
+            if (bad.length) {
+              console.error("VERSION FAMILY MISMATCH:\n" + bad.join("\n"));
+              process.exit(1);
+            }
+            console.log("version family OK: react-native " + rn + ", @react-native/* aligned, babel major aligned");
+          '
