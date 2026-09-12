@@ -1,15 +1,42 @@
+# ============================================================
+# TARGET FILE: Lennonhaha/fibemate-react-native  .github/dependabot.yml
+# ============================================================
+# 这是 PR #13 (sha f702881) 之后的【完整目标文件】。
+# PR #13 的 5 条 ignore 规则（fast-xml-parser / eslint / @babel/runtime /
+# @react-native/new-app-screen / @react-native/metro-config）已【原样保留】。
+#
+# 2026-09-12 更新（delta over PR #13 + 上一轮草稿）：
+#   新增 ignore:
+#     - image-size（无上游补丁，GHSA-5p2g-fcmc-qvqq / GHSA-w3rx-r6r6-pgpr）
+#     - @babel/core（Babel 8 需与 preset-env 联动，单独升破坏 7.x 生态）
+#     - @babel/preset-env（preset-env 8.x 需 @babel/core 8.x，PR #20 已证明破坏 CI）
+#   保留上一轮新增:
+#     - @react-native-community/*（major）
+#     - js-yaml（major）
+#     - react-native-safe-area-context（major）
+#   不 ignore（有补丁，应随父包自动修）:
+#     - browserslist（first_patched 4.28.7）
+#     - brace-expansion（first_patched 5.0.7/5.0.9）
+#     - joi（first_patched 17.13.5/17.13.6）
+#   rubygems（concurrent-ruby / activesupport）不在 npm dependabot 范围，需手动 bundle update。
+#
+# 应用方式：用本文件整体替换仓库内 .github/dependabot.yml。
+# 不要新增 `reason:` 字段——Dependabot v2 schema 不支持，写了会让整个 YAML 被拒。
+# ============================================================
+
 version: 2
+
 updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-    # fast-xml-parser is a transitive build-time dependency (pulled by
-    # @react-native-community/cli-config-android / cli-platform-apple, ^4.4.1).
-    # The 4.x line has no security patch; the only fixed releases are 5.x
-    # (semver-major). Dependabot cannot auto-bump across majors, so it loops
-    # on failure. Ignore the major bump to keep CI green; revisit if RN CLI
-    # toolchain adopts fast-xml-parser 5.x.
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    labels:
+      - "dependencies"
+      - "automerge"
+    # ===== PR #13 (sha f702881) 既有规则 —— 原样保留，勿删 =====
     ignore:
       - dependency-name: "fast-xml-parser"
         update-types: ["version-update:semver-major"]
@@ -27,3 +54,54 @@ updates:
         update-types: ["version-update:semver-minor"]
       - dependency-name: "@react-native/metro-config"
         update-types: ["version-update:semver-minor"]
+      # ===== 2026-09-12 新增（delta over PR #13） =====
+      # @react-native-community/*（cli / cli-platform-android / cli-platform-apple）
+      # 随 React Native 核心版本走（0.86.x）。react-native 本体仍是 0.86 时，
+      # 单独把 @react-native-community/cli 升到 20.2.0+ 会拉动 RN 工具链前移，
+      # 导致 metro / Hermes 转译链路与模板不匹配（对应 PR #18/#19/#20/#21）。
+      - dependency-name: "@react-native-community/*"
+        update-types: ["version-update:semver-major"]
+      # js-yaml 4.x 收紧了隐式类型解析（implicit resolvers），跨大版本可能改变
+      # 构建/工具脚本的 YAML 解析结果。低风险、可延后；等上游稳定后再解锁。
+      - dependency-name: "js-yaml"
+        update-types: ["version-update:semver-major"]
+      # react-native-safe-area-context 是 RN 0.86 锁定的配套包，跨大版本升级
+      # 应与 RN 整体升级一起做，单独升可能破坏布局兼容。
+      - dependency-name: "react-native-safe-area-context"
+        update-types: ["version-update:semver-major"]
+      # image-size 经 metro 传递引入（1.2.1，漏洞区间 <=2.0.2），无上游补丁。
+      # GHSA-5p2g-fcmc-qvqq（JXL/HEIF parser infinite loop, high）
+      # GHSA-w3rx-r6r6-pgpr（ICNS parser infinite loop, high）
+      # 属构建/开发期依赖，不进 PQC 运行时路径；保持告警 open，不静默绕过。
+      # reason: no upstream fix as of 2026-09; revisit when patch lands
+      - dependency-name: "image-size"
+        update-types: ["version-update:semver-major"]
+      # @babel/preset-env 8.x 需 @babel/core@^8，但 RN 0.86 锁定 Babel 7。
+      # PR #20 把 preset-env 升到 8.0.2 后 npm ci 直接 EUSAGE 失败（CI 红）。
+      # 等 RN 整体迁移到 Babel 8 时一起解锁。
+      - dependency-name: "@babel/preset-env"
+        update-types: ["version-update:semver-major"]
+      # @babel/core 8.x 与 preset-env 8.x 联动；单独升 core 到 8 会让 preset-env 7.x
+      # 的 peer 范围不满足，同样破坏 CI。与 preset-env 同步解锁。
+      - dependency-name: "@babel/core"
+        update-types: ["version-update:semver-major"]
+    groups:
+      react-native-tooling:
+        applies-to: version-updates
+        patterns:
+          - "@react-native/*"
+          - "react-native*"
+          - "@babel/*"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-deps:
+        applies-to: version-updates
+        patterns:
+          - "eslint*"
+          - "prettier*"
+          - "typescript"
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
