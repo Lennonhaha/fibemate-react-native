@@ -4,6 +4,11 @@ on:
     paths:
       - 'package.json'
       - '.github/workflows/version-family.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - '.github/workflows/version-family.yml'
 
 jobs:
   check:
