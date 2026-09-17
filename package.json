@@ -43,5 +43,9 @@
   "engines": {
     "node": ">= 22.11.0"
   },
-  "license": "GPL-3.0-only"
+  "license": "GPL-3.0-only",
+  "overrides": {
+    "js-yaml": "4.3.2",
+    "browserslist": "4.28.7"
+  }
 }
