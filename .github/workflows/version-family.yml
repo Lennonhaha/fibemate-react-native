@@ -1,10 +1,6 @@
 name: version-family-consistency
 on:
   pull_request:
-    paths:
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/version-family.yml'
   push:
     branches: [main]
     paths:

@@ -7,7 +7,7 @@
 #
 # 2026-09-12 更新（delta over PR #13 + 上一轮草稿）：
 #   新增 ignore:
-#     - image-size（无上游补丁，GHSA-5p2g-fcmc-qvqq / GHSA-w3rx-r6r6-pgpr）
+#     - image-size（有上游补丁 2.0.3；经 metro 传递引入，改用 overrides 强钉）
 #     - @babel/core（Babel 8 需与 preset-env 联动，单独升破坏 7.x 生态）
 #     - @babel/preset-env（preset-env 8.x 需 @babel/core 8.x，PR #20 已证明破坏 CI）
 #   保留上一轮新增:
@@ -69,11 +69,13 @@ updates:
       # 应与 RN 整体升级一起做，单独升可能破坏布局兼容。
       - dependency-name: "react-native-safe-area-context"
         update-types: ["version-update:semver-major"]
-      # image-size 经 metro 传递引入（1.2.1，漏洞区间 <=2.0.2），无上游补丁。
+      # image-size 经 metro@0.84.4 传递引入（其 range ^1.0.2 ⇒ 装 1.2.1；漏洞区间 <=2.0.2）。
       # GHSA-5p2g-fcmc-qvqq（JXL/HEIF parser infinite loop, high）
       # GHSA-w3rx-r6r6-pgpr（ICNS parser infinite loop, high）
-      # 属构建/开发期依赖，不进 PQC 运行时路径；保持告警 open，不静默绕过。
-      # reason: no upstream fix as of 2026-09; revisit when patch lands
+      # 【2026-10-16 更正】上游已有补丁 2.0.3 —— 此前记「无上游补丁」系过期。
+      # 父包 range ^1.0.2 不允许 2.x ⇒ Dependabot 无法自行升级，改用 package.json
+      # overrides 强钉 "image-size": "2.0.3"。此 ignore 保留，避免反复开无法落地的 major PR。
+      # 属构建/开发期依赖，不进 PQC 运行时路径。
       - dependency-name: "image-size"
         update-types: ["version-update:semver-major"]
       # @babel/preset-env 8.x 需 @babel/core@^8，但 RN 0.86 锁定 Babel 7。
@@ -85,6 +87,11 @@ updates:
       # 的 peer 范围不满足，同样破坏 CI。与 preset-env 同步解锁。
       - dependency-name: "@babel/core"
         update-types: ["version-update:semver-major"]
+    # ===== 已知无上游补丁（保持告警 open；不 dismiss、不 ignore） =====
+    # braces（GHSA-vfj7-8cjw-p6xm, high, alert #38）：3.0.3 即该线最新，
+    # advisory 的 first_patched_version = null ⇒ 升无可升，override 亦无版本可选。
+    # 经 micromatch（^3.0.3）传递引入；属构建/工具链路径，非运行时。
+    # 复评条件：braces 发布含修复版本后，重跑 Dependabot 并核对漏洞区间。
     groups:
       react-native-tooling:
         applies-to: version-updates
@@ -92,6 +99,8 @@ updates:
           - "@react-native/*"
           - "react-native*"
           - "@babel/*"
+        exclude-patterns:
+          - "react-native"
         update-types:
           - "minor"
           - "patch"
