@@ -48,12 +48,10 @@ updates:
       # 单独升会破坏 metro / Hermes 的转译链路，应与 RN 整体升级一起做。
       - dependency-name: "@babel/runtime"
         update-types: ["version-update:semver-major"]
-      # 这两个包随 React Native 核心版本走（0.86.x）。在 react-native 本体仍是
-      # 0.86 时单独升到 0.87，会出现模板 / 构建配置与新版本不匹配。
-      - dependency-name: "@react-native/new-app-screen"
-        update-types: ["version-update:semver-minor"]
-      - dependency-name: "@react-native/metro-config"
-        update-types: ["version-update:semver-minor"]
+      # 【2026-10-16 撤销 minor 锁】原对下两包 ignore semver-minor ⇒ 钉在 0.86.x；
+      # 而 version-family 门禁要求所有 @react-native/* 与 react-native 的 major.minor
+      # 相等 ⇒ 永久冲突，任何 react-native minor 升级 PR 必 fail（#47/#54/#55 同根）。
+      # 两包上游均有 0.87.x 稳定版（latest=0.88.0）⇒ 解锁以恢复「同 minor 同步升」。
       # ===== 2026-09-12 新增（delta over PR #13） =====
       # @react-native-community/*（cli / cli-platform-android / cli-platform-apple）
       # 随 React Native 核心版本走（0.86.x）。react-native 本体仍是 0.86 时，
@@ -99,8 +97,8 @@ updates:
           - "@react-native/*"
           - "react-native*"
           - "@babel/*"
-        exclude-patterns:
-          - "react-native"
+        # 不把 react-native 本体排除出组：门禁要求它与 @react-native/* 同 minor，
+        # 拆开会强制错位（#54/#55 实测）——2026-10-16 撤销。
         update-types:
           - "minor"
           - "patch"
