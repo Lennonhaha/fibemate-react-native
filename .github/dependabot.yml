@@ -20,6 +20,13 @@
 #     - joi（first_patched 17.13.5/17.13.6）
 #   rubygems（concurrent-ruby / activesupport）不在 npm dependabot 范围，需手动 bundle update。
 #
+# --- 2026-10-18：新增 github-actions 生态 ---------------------------------
+# 本仓此前只有 npm 一个生态 ⇒ .github/workflows/* 里钉死的 action SHA
+# 【不被 Dependabot 跟踪】（钉死即冻结，永远不会收到 bump PR）。
+# 新增下方 github-actions 条目后，引用的 tag 一变动就会开 PR，pin 注释里
+# 写着对应的版本号，便于人工核对。
+# 与 Lennonhaha/fibemate-mobile 的同名条目保持同一形态（那边已实测跑通）。
+# ---------------------------------------------------------------------------
 # 应用方式：用本文件整体替换仓库内 .github/dependabot.yml。
 # 不要新增 `reason:` 字段——Dependabot v2 schema 不支持，写了会让整个 YAML 被拒。
 # ============================================================
@@ -110,5 +117,35 @@ updates:
           - "typescript"
           - "@types/*"
         update-types:
+          - "minor"
+          - "patch"
+
+  # ----------------------------------------------------------------------
+  # GitHub Actions 在 .github/workflows/* 里全部钉到完整 commit SHA
+  # （dco / interop / mobile-ci / version-family / dependabot-auto-merge）。
+  # 没有这个条目，Dependabot 永远不会为它们开 bump PR，pin 会静默变旧。
+  #
+  # 刻意【不加】automerge 标签：与 npm 段不同，action SHA 一变动等于
+  # 「CI 里真正执行的东西变了」，所以这些 PR 必须人工过目，而不是被
+  # dependabot-auto-merge.yml 自动合并。
+  # ----------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    groups:
+      github-actions:
+        # 有意把 major 也并入本组。Dependabot 会把同一 action 的不同 step
+        # 当独立依赖（例如 CodeQL 的 init / analyze），而这些 step 在同一个
+        # workflow 里必须同版本 —— major 若被排除在组外会拆成两个 PR、双双
+        # 失败。本仓目前没有 codeql-action，但规则对任何多 step 的 action
+        # （如 checkout 的复用处）同样成立，故此处统一含 major。
+        patterns:
+          - "*"
+        update-types:
+          - "major"
           - "minor"
           - "patch"
