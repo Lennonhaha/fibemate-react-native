@@ -106,7 +106,11 @@ updates:
           - "@babel/*"
         # 不把 react-native 本体排除出组：门禁要求它与 @react-native/* 同 minor，
         # 拆开会强制错位（#54/#55 实测）——2026-10-16 撤销。
+        # 【2026-10-18】把 major 也并入本组：组若排除 major，Dependabot 会对该
+        # 类型另开单包 PR（mobile 的 codeql-action #81/#82 即此），而单包大版本
+        # 升级必撞同一道 version-family 门禁。族内一起升才不会错位。
         update-types:
+          - "major"
           - "minor"
           - "patch"
       dev-deps:
